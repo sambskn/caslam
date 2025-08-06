@@ -79,24 +79,97 @@ local function getHexImage(height, hexType, hexNum)
 end
 
 local indicatorRadius = 10
+local indicatorX = 220
+local indicatorY = 100
 
 -- TODO: make indicator snap to hex vertices
 local function drawIndicator()
     local bumpRad = (math.sin(pd.getCurrentTimeMilliseconds() * 0.005) + 1) * 0.5 * (indicatorRadius / 4);
     gfx.setColor(gfx.kColorWhite)
     gfx.setLineWidth(7)
-    gfx.drawCircleAtPoint(220, 100, indicatorRadius + bumpRad)
+    gfx.drawCircleAtPoint(indicatorX, indicatorY, indicatorRadius + bumpRad)
     gfx.setLineWidth(6)
-    gfx.drawCircleAtPoint(220, 100, bumpRad)
+    gfx.drawCircleAtPoint(indicatorX, indicatorY, bumpRad)
 
     gfx.setColor(gfx.kColorBlack)
     gfx.setLineWidth(2)
-    gfx.drawCircleAtPoint(220, 100, indicatorRadius + bumpRad)
-    gfx.fillCircleAtPoint(220, 100, bumpRad)
+    gfx.drawCircleAtPoint(indicatorX, indicatorY, indicatorRadius + bumpRad)
+    gfx.fillCircleAtPoint(indicatorX, indicatorY, bumpRad)
+end
+
+local hexRows = { { 1, 2, 3 }, { 4, 5, 6, 1 }, { 3, 4, 5, 6, 1 }, { 3, 2, 1, 4 }, { 2, 2, 5 } }
+
+local targetIndicatorX = indicatorX
+local targetIndicatorY = indicatorY
+local slowdownRadius = 10
+local indicatorSpeed = 2
+
+local velX = 0
+local velY = 0
+
+local row = 1
+local col = 2
+
+local function getXYFromRowCol()
+    local hexagonSide = hexHeight / 2
+    local hexWidth = math.sqrt(3) * hexagonSide
+    local vertCornerOffset = (hexHeight - hexagonSide) / 2
+    local x = originX + (hexWidth * col) - (hexWidth / 2)
+    if row % 2 == 0 then
+        x -= hexWidth / 2
+    end
+    if #hexRows[row] > 4 then
+        x -= hexWidth
+    end
+    local y = originY + vertCornerOffset + row * (hexHeight - vertCornerOffset)
+    return { x, y }
+end
+
+local function updateIndicatorPos()
+    if pd.buttonJustPressed(pd.kButtonUp) and row > 1 then
+        row -= 1
+    end
+
+    if pd.buttonJustPressed(pd.kButtonDown) and row < #hexRows then
+        row += 1
+    end
+
+    if pd.buttonJustPressed(pd.kButtonLeft) and col > 1 then
+        col -= 1
+    end
+
+    if pd.buttonJustPressed(pd.kButtonRight) and col < #hexRows[row] then
+        col += 1
+    end
+    local targetCoords = getXYFromRowCol()
+    if targetIndicatorX ~= targetCoords[1] then
+        targetIndicatorX = targetCoords[1]
+    end
+    if targetIndicatorY ~= targetCoords[2] then
+        targetIndicatorY = targetCoords[2]
+    end
+    -- get diff between target and current location
+    local diffX = targetIndicatorX - indicatorX
+    local diffY = targetIndicatorY - indicatorY
+    local diffTotal = math.sqrt(diffX * diffX + diffY * diffY)
+    -- update velocity
+    velX += (diffX / diffTotal) * indicatorSpeed
+    velY += (diffY / diffTotal) * indicatorSpeed
+    if diffTotal < slowdownRadius then
+        local slowdown = math.max(diffTotal / slowdownRadius, 0.5)
+        velX *= slowdown
+        velY *= slowdown
+    end
+    if math.abs(diffX) > 1 then
+        indicatorX += velX
+    end
+    if math.abs(diffY) > 1 then
+        indicatorY += velY
+    end
 end
 
 
-local hexRows = { { 1, 2, 3 }, { 4, 5, 6, 1 }, { 3, 4, 5, 6, 1 }, { 3, 2, 1, 4 }, { 2, 2, 5 } }
+
 
 
 -- playdate.update function is required in every project!
@@ -121,6 +194,6 @@ function playdate.update()
             newHex:drawAnchored(x, y, 0.0, 0.0)
         end
     end
-
     drawIndicator()
+    updateIndicatorPos()
 end
