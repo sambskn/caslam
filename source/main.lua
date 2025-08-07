@@ -89,7 +89,7 @@ local indicatorRadius = 10
 local indicatorX = 220
 local indicatorY = 100
 
--- TODO: make indicator snap to hex vertices
+-- TODO: make indicator snap to *all* hex vertices
 local function drawIndicator()
     local bumpRad = (math.sin(pd.getCurrentTimeMilliseconds() * 0.005) + 1) * 0.5 * (indicatorRadius / 4);
     gfx.setColor(gfx.kColorWhite)
@@ -104,9 +104,50 @@ local function drawIndicator()
     gfx.fillCircleAtPoint(indicatorX, indicatorY, bumpRad)
 end
 
-local hexRows = { { 1, 2, 3 }, { 4, 5, 3, 1 }, { 3, 4, 2, 6, 1 }, { 3, 5, 4, 2 }, { 2, 1, 5 } }
-
 local numberSet = { 5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11 }
+
+local TREES = 1
+local CROPS = 2
+local ANIMALS = 3
+local ORE = 4
+local CLAY = 5
+local NOMANS = 6
+
+local function generateHexes()
+    -- number of tiles of each type
+    local hexTypePool = {
+        [TREES] = 4,
+        [CROPS] = 4,
+        [ANIMALS] = 4,
+        [ORE] = 3,
+        [CLAY] = 3,
+        [NOMANS] = 1
+    }
+    local rowSizes = { 3, 4, 5, 4, 3 }
+    local hexes = {}
+    for rowIndex, rowSize in pairs(rowSizes) do
+        hexes[rowIndex] = {}
+        for col = 1, rowSize do
+            -- get hex type with retry if empty already
+            local randHexType = math.random(#hexTypePool)
+            if hexTypePool[randHexType] == 0 then
+                while hexTypePool[randHexType] == 0 do
+                    randHexType = math.random(#hexTypePool)
+                end
+            end
+            -- add to main hexes output
+            hexes[rowIndex][col] = { ["type"] = randHexType }
+            -- decremnt value in pool
+            hexTypePool[randHexType] -= 1
+        end
+    end
+
+    -- TODO: assign numbers here
+
+    return hexes
+end
+
+local currentHexes = generateHexes()
 
 local targetIndicatorX = indicatorX
 local targetIndicatorY = indicatorY
@@ -127,7 +168,7 @@ local function getXYFromRowCol()
     if row % 2 == 0 then
         x -= hexWidth / 2
     end
-    if #hexRows[row] > 4 then
+    if #currentHexes[row] > 4 then
         x -= hexWidth
     end
     local y = originY + vertCornerOffset + row * (hexHeight - vertCornerOffset)
@@ -139,7 +180,7 @@ local function updateIndicatorPos()
         row -= 1
     end
 
-    if pd.buttonJustPressed(pd.kButtonDown) and row < #hexRows then
+    if pd.buttonJustPressed(pd.kButtonDown) and row < #currentHexes then
         row += 1
     end
 
@@ -147,7 +188,7 @@ local function updateIndicatorPos()
         col -= 1
     end
 
-    if pd.buttonJustPressed(pd.kButtonRight) and col < #hexRows[row] then
+    if pd.buttonJustPressed(pd.kButtonRight) and col < #currentHexes[row] then
         col += 1
     end
     local targetCoords = getXYFromRowCol()
@@ -190,8 +231,9 @@ function playdate.update()
     local hexWidth = math.sqrt(3) * hexagonSide
     local vertCornerOffset = (hexHeight - hexagonSide) / 2
     local hexIndex = 1
-    for row, hexesTable in pairs(hexRows) do
-        for col, hexType in pairs(hexesTable) do
+    for row, hexesTable in pairs(currentHexes) do
+        for col, hex in pairs(hexesTable) do
+            local hexType = hex["type"]
             local newHex = getHexImage(hexHeight, hexType, numberSet[hexIndex])
             local x = originX + (hexWidth * col) - (hexWidth / 2)
             if row % 2 == 0 then
@@ -208,6 +250,12 @@ function playdate.update()
             end
         end
     end
+
+    -- regenerate tiles
+    if pd.buttonJustPressed(pd.kButtonA) then
+        currentHexes = generateHexes()
+    end
+
     drawIndicator()
     updateIndicatorPos()
 end
