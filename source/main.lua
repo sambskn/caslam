@@ -104,8 +104,6 @@ local function drawIndicator()
     gfx.fillCircleAtPoint(indicatorX, indicatorY, bumpRad)
 end
 
-local numberSet = { 5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11 }
-
 local TREES = 1
 local CROPS = 2
 local ANIMALS = 3
@@ -113,6 +111,158 @@ local ORE = 4
 local CLAY = 5
 local NOMANS = 6
 
+local function newHexPos(r, c)
+    return {
+        ["row"] = r,
+        ["col"] = c
+    }
+end
+
+local function doesHexHaveNumber(r, c, hexes)
+    if hexes == nil then
+        print("no hexes provided")
+        return nil
+    end
+    if hexes[r] == nil then
+        print("invalid row")
+        return nil
+    end
+    if hexes[r][c] == nil then
+        print("invalid col")
+        return nil
+    end
+
+    return hexes[r][c]["number"] ~= nil
+end
+
+local function isDesert(r, c, hexes)
+    return hexes[r][c]["type"] == 6
+end
+
+local function getNextPosition(currentPos, hexes)
+    -- go to next posiition counterclockwise spiral way, or return nil
+    local currRow = currentPos["row"]
+    local currCol = currentPos["col"]
+    -- if we're above the middle we go 'left'
+    if currRow <= 3 then
+        -- check if we're at the edge
+        if currCol == 1 then
+            -- check next 'first' and see if empty
+            if doesHexHaveNumber(currRow + 1, 1, hexes) then
+                -- check next hex on row
+                if doesHexHaveNumber(currRow + 1, 2, hexes) then
+                    -- use center? I think this should only happen on row 3
+                    print("wow this never happens i swear what row is thia?    ", currRow + 1)
+                    return newHexPos(currRow + 1, 3)
+                else
+                    return newHexPos(currRow + 1, 2)
+                end
+            else
+                -- use that one
+                return newHexPos(currRow + 1, 1)
+            end
+        else
+            -- if on the far edge, go up
+            if (currCol == #(hexes[currRow]) or doesHexHaveNumber(currRow, currCol + 1, hexes) or isDesert(currRow, currCol + 1, hexes)) and currRow > 1 then
+                if doesHexHaveNumber(currRow - 1, #(hexes[currRow - 1]), hexes) then
+                    if doesHexHaveNumber(currRow - 1, #(hexes[currRow - 1]) - 1, hexes) then
+                        if not doesHexHaveNumber(currRow - 1, #(hexes[currRow - 1]) - 2, hexes) then
+                            return newHexPos(currRow - 1, #(hexes[currRow - 1]) - 2)
+                        end
+                        -- no else
+                    else
+                        return newHexPos(currRow - 1, #(hexes[currRow - 1]) - 1)
+                    end
+                else
+                    return newHexPos(currRow - 1, #(hexes[currRow - 1]))
+                end
+            end
+            -- not on the edge huh? lets go one left, ot go down if thats full
+            if doesHexHaveNumber(currRow, currCol - 1, hexes) then
+                -- uh lets go check down one, but offset
+                if doesHexHaveNumber(currRow + 1, currCol, hexes) or isDesert(currRow + 1, currCol, hexes) then
+                    -- bruh how
+
+
+                    if doesHexHaveNumber(currRow + 1, currCol + 1, hexes) or isDesert(currRow + 1, currCol + 1, hexes) then
+                        print("return center, trust me bro")
+                        return newHexPos(3, 3)
+                    else
+                        return newHexPos(currRow + 1, currCol + 1)
+                    end
+                else
+                    -- ok cool going down one
+                    return newHexPos(currRow + 1, currCol)
+                end
+            else
+                -- use that one to the left
+                return newHexPos(currRow, currCol - 1)
+            end
+        end
+    else
+        -- we in the lower half, so do basically the saem stuff but the other way
+        -- (no sam don't just copy the code and edit ti hey wait)
+        -- check if we're at the edge
+        if currCol == #(hexes[currRow]) then
+            -- check next 'end' and see if empty
+            if doesHexHaveNumber(currRow - 1, #(hexes[currRow - 1]), hexes) then
+                -- check next hex on row
+                if doesHexHaveNumber(currRow - 1, #(hexes[currRow - 1]) - 1, hexes) or isDesert(currRow - 1, #(hexes[currRow - 1]) - 1, hexes) then
+                    -- use center? I think this should only happen on row 3
+                    print("wow this never happens i swear what row is thia?    ", currRow + 1)
+                    return newHexPos(3, 3)
+                else
+                    return newHexPos(currRow - 1, #(hexes[currRow - 1]) - 1)
+                end
+            else
+                -- use that one
+                return newHexPos(currRow - 1, #(hexes[currRow - 1]))
+            end
+        else
+            -- check if on close edge and room to go
+            if currCol == 1 and currRow + 1 < 6 then
+                if doesHexHaveNumber(currRow + 1, 1, hexes) or isDesert(currRow + 1, 1, hexes) then
+                    if doesHexHaveNumber(currRow + 1, 2, hexes) or isDesert(currRow + 1, 2, hexes) then
+                        if not (doesHexHaveNumber(currRow + 1, 3, hexes) or isDesert(currRow + 1, 3, hexes)) then
+                            return newHexPos(currRow + 1, 3)
+                        end
+                        -- no else clause here, logic below will handle it
+                    else
+                        return newHexPos(currRow + 1, 2)
+                    end
+                else
+                    return newHexPos(currRow + 1, 1)
+                end
+            end
+
+            -- not on the edge huh? lets go one right, or go up if thats full
+            if doesHexHaveNumber(currRow, currCol + 1, hexes) then
+                -- uh lets go check up one, but offset
+                if doesHexHaveNumber(currRow - 1, currCol + 1, hexes) then
+                    -- bruh how
+                    print("return center, trust for sho")
+                    return newHexPos(3, 3)
+                else
+                    -- ok cool going down one
+                    return newHexPos(currRow - 1, currCol + 1)
+                end
+            else
+                -- use that one to the right
+                return newHexPos(currRow, currCol + 1)
+            end
+        end
+    end
+end
+
+-- local numberSet = {
+--     5, 2, 6,
+--     3, 8, 10,
+--     9, 12, 11,
+--     4, 8, 10,
+--     9, 4, 5,
+--     6, 3, 11
+-- } -- note: ordered
+local numberSet = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 }
 local function generateHexes()
     -- number of tiles of each type
     local hexTypePool = {
@@ -141,9 +291,60 @@ local function generateHexes()
             hexTypePool[randHexType] -= 1
         end
     end
-
-    -- TODO: assign numbers here
-
+    -- can start in any of the corners
+    local startingPostitions = {
+        {
+            ["row"] = 1,
+            ["col"] = 1,
+        },
+        {
+            ["row"] = 1,
+            ["col"] = 3,
+        },
+        {
+            ["row"] = 3,
+            ["col"] = 1,
+        },
+        {
+            ["row"] = 3,
+            ["col"] = 5,
+        },
+        {
+            ["row"] = 5,
+            ["col"] = 1,
+        },
+        {
+            ["row"] = 5,
+            ["col"] = 3,
+        },
+    }
+    local currentPos = startingPostitions[math.random(#startingPostitions)]
+    local numberOfNumAssigned = 0
+    local numbersToAssign = #numberSet
+    local loopCount = 0
+    while numberOfNumAssigned < numbersToAssign and loopCount < 1000 do
+        print("posiition")
+        print("r: ", currentPos["row"])
+        print("c: ", currentPos["col"])
+        -- check if it's a desert, if not, give it a number and iterate
+        if hexes[currentPos["row"]][currentPos["col"]]["type"] ~= 6 then
+            local numIndex = numberOfNumAssigned + 1
+            hexes[currentPos["row"]][currentPos["col"]]["number"] = numberSet[numIndex]
+            numberOfNumAssigned += 1
+        end
+        -- iterate current pos
+        local newPos = getNextPosition(currentPos, hexes)
+        local checkNewPos = doesHexHaveNumber(newPos["row"], newPos["col"], hexes)
+        if checkNewPos == true then
+            print("bro it gave us a bad one")
+        end
+        if newPos ~= nil then
+            currentPos = newPos
+        else
+            print("oh god why is it nil")
+        end
+        loopCount += 1
+    end
     return hexes
 end
 
@@ -230,11 +431,14 @@ function playdate.update()
     local hexagonSide = hexHeight / 2
     local hexWidth = math.sqrt(3) * hexagonSide
     local vertCornerOffset = (hexHeight - hexagonSide) / 2
-    local hexIndex = 1
     for row, hexesTable in pairs(currentHexes) do
         for col, hex in pairs(hexesTable) do
             local hexType = hex["type"]
-            local newHex = getHexImage(hexHeight, hexType, numberSet[hexIndex])
+            local number = hex["number"]
+            if number == nil then
+                number = 99
+            end
+            local newHex = getHexImage(hexHeight, hexType, number)
             local x = originX + (hexWidth * col) - (hexWidth / 2)
             if row % 2 == 0 then
                 x -= hexWidth / 2
@@ -244,10 +448,6 @@ function playdate.update()
             end
             local y = originY + row * (hexHeight - vertCornerOffset)
             newHex:drawAnchored(x, y, 0.0, 0.0)
-            -- skip desert, it doesn't get its number used
-            if hexType ~= 6 then
-                hexIndex += 1
-            end
         end
     end
 
