@@ -227,47 +227,56 @@ local ports = {
     {
         ["offsetFromOrigin"] = { 48, 6 },
         ["portType"] = THREE_TO_ONE,
-        ["portDir"] = P_DOWN_RIGHT
+        ["portDir"] = P_DOWN_RIGHT,
+        ["image"] = getPortImage(THREE_TO_ONE, P_DOWN_RIGHT)
     },
     {
         ["offsetFromOrigin"] = { 136, 6 },
         ["portType"] = THREE_TO_ONE,
-        ["portDir"] = P_DOWN_LEFT
+        ["portDir"] = P_DOWN_LEFT,
+        ["image"] = getPortImage(THREE_TO_ONE, P_DOWN_LEFT)
     },
     {
         ["offsetFromOrigin"] = { -20, 46 },
         ["portType"] = ANIMALS,
-        ["portDir"] = P_DOWN_RIGHT
+        ["portDir"] = P_DOWN_RIGHT,
+        ["image"] = getPortImage(ANIMALS, P_DOWN_RIGHT)
     },
     {
         ["offsetFromOrigin"] = { 182, 82 },
         ["portType"] = CLAY,
-        ["portDir"] = P_LEFT
+        ["portDir"] = P_LEFT,
+        ["image"] = getPortImage(CLAY, P_LEFT)
     },
     {
         ["offsetFromOrigin"] = { -66, 121 },
         ["portType"] = THREE_TO_ONE,
-        ["portDir"] = P_RIGHT
+        ["portDir"] = P_RIGHT,
+        ["image"] = getPortImage(THREE_TO_ONE, P_RIGHT)
     },
     {
         ["offsetFromOrigin"] = { 182, 162 },
         ["portType"] = TREES,
-        ["portDir"] = P_LEFT
+        ["portDir"] = P_LEFT,
+        ["image"] = getPortImage(TREES, P_LEFT)
     },
     {
         ["offsetFromOrigin"] = { -20, 200 },
         ["portType"] = ORE,
-        ["portDir"] = P_UP_RIGHT
+        ["portDir"] = P_UP_RIGHT,
+        ["image"] = getPortImage(ORE, P_UP_RIGHT)
     },
     {
         ["offsetFromOrigin"] = { 49, 236 },
         ["portType"] = CROPS,
-        ["portDir"] = P_UP_RIGHT
+        ["portDir"] = P_UP_RIGHT,
+        ["image"] = getPortImage(CROPS, P_UP_RIGHT)
     },
     {
         ["offsetFromOrigin"] = { 135, 236 },
         ["portType"] = THREE_TO_ONE,
-        ["portDir"] = P_UP_LEFT
+        ["portDir"] = P_UP_LEFT,
+        ["image"] = getPortImage(THREE_TO_ONE, P_UP_LEFT)
     }
 }
 
@@ -455,6 +464,10 @@ local function generateHexes()
             end
             -- add to main hexes output
             hexes[rowIndex][col] = { ["type"] = randHexType }
+            if randHexType == NOMANS then
+                -- generate the image for the desert, we don't need to know it's number so we can do that now
+                hexes[rowIndex][col]["image"] = getHexImage(hexHeight, NOMANS)
+            end
             -- decremnt value in pool
             hexTypePool[randHexType] -= 1
         end
@@ -491,11 +504,17 @@ local function generateHexes()
     local numbersToAssign = #numberSet
     while numberOfNumAssigned < numbersToAssign do
         -- check if it's a desert, if not, give it a number and iterate
-        if hexes[currentPos["row"]][currentPos["col"]]["type"] ~= 6 then
+        if hexes[currentPos["row"]][currentPos["col"]]["type"] ~= NOMANS then
             local numIndex = numberOfNumAssigned + 1
             hexes[currentPos["row"]][currentPos["col"]]["number"] = numberSet[numIndex]
             numberOfNumAssigned += 1
         end
+        -- save image of hex
+        hexes[currentPos["row"]][currentPos["col"]]["image"] = getHexImage(
+            hexHeight,
+            hexes[currentPos["row"]][currentPos["col"]]["type"],
+            hexes[currentPos["row"]][currentPos["col"]]["number"]
+        )
         if numberOfNumAssigned < numbersToAssign then
             -- iterate current pos
             local newPos = getNextPosition(currentPos, hexes)
@@ -536,19 +555,19 @@ local function getXYFromRowCol()
 end
 
 local function updateIndicatorPos()
-    if pd.buttonJustPressed(pd.kButtonUp) and row > 1 then
+    if pd.buttonJustReleased(pd.kButtonUp) and row > 1 then
         row -= 1
     end
 
-    if pd.buttonJustPressed(pd.kButtonDown) and row < #currentHexes then
+    if pd.buttonJustReleased(pd.kButtonDown) and row < #currentHexes then
         row += 1
     end
 
-    if pd.buttonJustPressed(pd.kButtonLeft) and col > 1 then
+    if pd.buttonJustReleased(pd.kButtonLeft) and col > 1 then
         col -= 1
     end
 
-    if pd.buttonJustPressed(pd.kButtonRight) and col < #currentHexes[row] then
+    if pd.buttonJustReleased(pd.kButtonRight) and col < #currentHexes[row] then
         col += 1
     end
     local targetCoords = getXYFromRowCol()
@@ -621,19 +640,16 @@ local function getPlayerStatusBarImage(playerName)
     return playerStatusBarImage
 end
 
+local player1BarImage = getPlayerStatusBarImage("SAM")
+local player2BarImage = getPlayerStatusBarImage("SAM")
+local player3BarImage = getPlayerStatusBarImage("SAM")
+local player4BarImage = getPlayerStatusBarImage("SAM")
+
 local function drawUI()
-    local playerName = "SAM"
-    local playerBarImage = getPlayerStatusBarImage(playerName)
-    playerBarImage:drawAnchored(5, 5, 0.0, 0.0)
-    playerName = "STVN"
-    playerBarImage = getPlayerStatusBarImage(playerName)
-    playerBarImage:drawAnchored(5, 25, 0.0, 0.0)
-    playerName = "JOE"
-    playerBarImage = getPlayerStatusBarImage(playerName)
-    playerBarImage:drawAnchored(5, 45, 0.0, 0.0)
-    playerName = "KAI"
-    playerBarImage = getPlayerStatusBarImage(playerName)
-    playerBarImage:drawAnchored(5, 65, 0.0, 0.0)
+    player1BarImage:drawAnchored(5, 5, 0.0, 0.0)
+    player2BarImage:drawAnchored(5, 25, 0.0, 0.0)
+    player3BarImage:drawAnchored(5, 45, 0.0, 0.0)
+    player4BarImage:drawAnchored(5, 65, 0.0, 0.0)
     -- TODO: animate movement of this bar as turn transitions
     -- (+20 to y per player)
     gfx.setColor(gfx.kColorXOR)
@@ -648,8 +664,7 @@ function playdate.update()
 
     -- draw ports
     for key, port in pairs(ports) do
-        local newPort = getPortImage(port["portType"], port["portDir"])
-        newPort:drawAnchored(originX + port["offsetFromOrigin"][1], originY + port["offsetFromOrigin"][2], 0.0, 0.0)
+        port["image"]:drawAnchored(originX + port["offsetFromOrigin"][1], originY + port["offsetFromOrigin"][2], 0.0, 0.0)
     end
 
     -- draw hexes and numbers
@@ -658,12 +673,11 @@ function playdate.update()
     local vertCornerOffset = (hexHeight - hexagonSide) / 2
     for row, hexesTable in pairs(currentHexes) do
         for col, hex in pairs(hexesTable) do
-            local hexType = hex["type"]
             local number = hex["number"]
             if number == nil then
                 number = 99
             end
-            local newHex = getHexImage(hexHeight, hexType, number)
+            local newHex = hex["image"]
             local x = originX + (hexWidth * col) - (hexWidth / 2)
             if row % 2 == 0 then
                 x -= hexWidth / 2
