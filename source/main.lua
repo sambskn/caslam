@@ -12,8 +12,8 @@ import "CoreLibs/ui"
 local pd <const> = playdate
 local gfx <const> = playdate.graphics
 
-local hexHeight = 58
-local originX, originY = 100, -40
+local hexHeight = 54
+local originX, originY = 168, -28
 
 local numFont = gfx.font.new("fonts/topaz_serif_8")
 
@@ -34,7 +34,7 @@ local function getHexImage(height, hexType, hexNum)
     gfx.pushContext(hexImg)
     -- shoutout https://gurgleapps.com/tools/matrix
     if hexType == TREES then
-        gfx.setPattern({ 0x00, 0x23, 0x57, 0x26, 0x00, 0x32, 0x75, 0x62 }) -- funk blobs
+        gfx.setPattern({ 0x55, 0x55, 0x57, 0x75, 0x75, 0xad, 0xad, 0x77 }) -- funk blobs
     end
     if hexType == CROPS then
         -- good ol h-bone
@@ -80,7 +80,7 @@ local function getHexImage(height, hexType, hexNum)
     if hexType ~= 6 then
         gfx.setFont(numFont)
         local textWidth = gfx.getTextSize(hexNum)
-        gfx.fillCircleAtPoint(hexWidth * 1 / 2, hexHeight * 1 / 2 - 1, 10)
+        gfx.fillCircleAtPoint(hexWidth * 1 / 2, hexHeight * 1 / 2 - 1, 9)
         gfx.setColor(gfx.kColorBlack)
         gfx.drawTextAligned(hexNum, hexWidth * 1 / 2 - textWidth / 2, height * 5 / 12, gfx.kAlignCenter)
     end
@@ -88,6 +88,188 @@ local function getHexImage(height, hexType, hexNum)
     gfx.popContext()
     return hexImg
 end
+
+local P_RIGHT = 1
+local P_LEFT = 2
+local P_DOWN_LEFT = 3
+local P_DOWN_RIGHT = 4
+local P_UP_LEFT = 5
+local P_UP_RIGHT = 6
+local THREE_TO_ONE = 6
+local function getPortImage(portType, portDir)
+    -- two lines for the spots
+    -- small symbol or text
+    local hexagonSide = hexHeight / 2
+    local hexWidth = math.sqrt(3) * hexagonSide
+
+    local vertCornerOffset = (hexHeight - hexagonSide) / 2
+    local portImg = gfx.image.new(hexWidth, hexHeight)
+    gfx.pushContext(portImg)
+    -- defaull case is pointing right
+    local x1 = hexWidth
+    local y1 = hexHeight - vertCornerOffset
+    local x2 = hexWidth
+    local y2 = vertCornerOffset
+    if portDir == P_LEFT then
+        x1 = 0
+        x2 = 0
+    elseif portDir == P_DOWN_RIGHT then
+        x1 = hexWidth / 2
+        y1 = hexHeight - vertCornerOffset / 2
+        x2 = hexWidth
+        y2 = hexHeight - vertCornerOffset
+    elseif portDir == P_DOWN_LEFT then
+        x1 = hexWidth / 2
+        y1 = hexHeight - vertCornerOffset / 2
+        x2 = 0
+        y2 = hexHeight - vertCornerOffset
+    elseif portDir == P_UP_RIGHT then
+        x1 = hexWidth / 2
+        y1 = vertCornerOffset / 2
+        x2 = hexWidth
+        y2 = vertCornerOffset
+    elseif portDir == P_UP_LEFT then
+        x1 = hexWidth / 2
+        y1 = vertCornerOffset / 2
+        x2 = 0
+        y2 = vertCornerOffset
+    end
+    gfx.setPattern({ 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa9 })
+    gfx.setLineWidth(2)
+    gfx.drawLine(hexWidth / 2, hexHeight / 2, x1, y1)
+    gfx.drawLine(hexWidth / 2, hexHeight / 2, x2, y2)
+    -- resource based ports get a little pattern sample
+    if portType == TREES then
+        gfx.setPattern({ 0x55, 0x55, 0x57, 0x75, 0x75, 0xad, 0xad, 0x77 }) -- funk blobs
+    elseif portType == CROPS then
+        -- good ol h-bone
+        gfx.setPattern({ 0x6c, 0xc6, 0x93, 0x39, 0x6c, 0xc6, 0x93, 0x39 })
+    elseif portType == ANIMALS then
+        gfx.setPattern({ 0x99, 0x47, 0x1f, 0xa1, 0x1e, 0xf1, 0x0f, 0xfe }) -- tree fields
+    elseif portType == ORE then
+        --rocks
+        gfx.setPattern { 0x00, 0x0c, 0x1e, 0x3f, 0x7e, 0x7d, 0xba, 0x55 }
+    elseif portType == CLAY then
+        --brick
+        gfx.setPattern { 0x3f, 0x9f, 0xcf, 0xc7, 0x93, 0x39, 0x7c, 0x7e }
+    end
+    if portType ~= THREE_TO_ONE then
+        gfx.fillCircleAtPoint(hexWidth / 2, hexHeight / 2, 10)
+    else
+        -- for 3:1 ports draw a ?
+        gfx.setColor(gfx.kColorClear)
+        gfx.fillCircleAtPoint(hexWidth / 2, hexHeight / 2, 10)
+        gfx.setColor(gfx.kColorBlack)
+        gfx.setFont(numFont)
+        local textWidth = gfx.getTextSize("3:1")
+        gfx.drawTextAligned("3:1", hexWidth / 2 - textWidth / 2, hexHeight / 2 - 4, gfx.kAlignCenter)
+    end
+
+
+    gfx.setColor(gfx.kColorClear)
+    local clearLineWidth = 2
+    gfx.setLineWidth(clearLineWidth)
+    if portDir == P_RIGHT then
+        x1 = hexWidth - clearLineWidth
+        y1 = 0
+        x2 = hexWidth - clearLineWidth
+        y2 = hexHeight
+    elseif portDir == P_LEFT then
+        x1 = clearLineWidth - 1
+        y1 = 0
+        x2 = clearLineWidth - 1
+        y2 = hexHeight
+    elseif portDir == P_DOWN_RIGHT then
+        x1 = hexWidth / 2
+        y1 = hexHeight - clearLineWidth
+        x2 = hexWidth - clearLineWidth
+        y2 = hexHeight - vertCornerOffset
+    elseif portDir == P_DOWN_LEFT then
+        x1 = hexWidth / 2
+        y1 = hexHeight - clearLineWidth
+        x2 = clearLineWidth
+        y2 = hexHeight - vertCornerOffset
+    elseif portDir == P_UP_RIGHT then
+        x1 = hexWidth / 2
+        y1 = clearLineWidth
+        x2 = hexWidth - clearLineWidth
+        y2 = vertCornerOffset
+    elseif portDir == P_UP_LEFT then
+        x1 = hexWidth / 2
+        y1 = clearLineWidth
+        x2 = clearLineWidth
+        y2 = vertCornerOffset
+    end
+    gfx.drawLine(x1, y1, x2, y2)
+
+    gfx.drawCircleAtPoint(hexWidth / 2, hexHeight / 2, 11)
+    gfx.setColor(gfx.kColorBlack)
+    gfx.setLineWidth(1)
+    gfx.drawCircleAtPoint(hexWidth / 2, hexHeight / 2, 12)
+
+
+    gfx.popContext()
+    return portImg
+end
+
+-- 9 ports total
+-- static locations
+-- catan.bunge.io has:
+--          3:1    3:1
+-- SHEEP
+--                         BRICK
+-- 3:1
+--                         WOOD
+-- ORE
+--         WHEAT   3:1
+-- 1 of each resource + 4 3:1 ports
+local ports = {
+    {
+        ["offsetFromOrigin"] = { 48, 6 },
+        ["portType"] = THREE_TO_ONE,
+        ["portDir"] = P_DOWN_RIGHT
+    },
+    {
+        ["offsetFromOrigin"] = { 136, 6 },
+        ["portType"] = THREE_TO_ONE,
+        ["portDir"] = P_DOWN_LEFT
+    },
+    {
+        ["offsetFromOrigin"] = { -20, 46 },
+        ["portType"] = ANIMALS,
+        ["portDir"] = P_DOWN_RIGHT
+    },
+    {
+        ["offsetFromOrigin"] = { 182, 82 },
+        ["portType"] = CLAY,
+        ["portDir"] = P_LEFT
+    },
+    {
+        ["offsetFromOrigin"] = { -66, 121 },
+        ["portType"] = THREE_TO_ONE,
+        ["portDir"] = P_RIGHT
+    },
+    {
+        ["offsetFromOrigin"] = { 182, 162 },
+        ["portType"] = TREES,
+        ["portDir"] = P_LEFT
+    },
+    {
+        ["offsetFromOrigin"] = { -20, 200 },
+        ["portType"] = ORE,
+        ["portDir"] = P_UP_RIGHT
+    },
+    {
+        ["offsetFromOrigin"] = { 49, 236 },
+        ["portType"] = CROPS,
+        ["portDir"] = P_UP_RIGHT
+    },
+    {
+        ["offsetFromOrigin"] = { 135, 236 },
+        ["portType"] = THREE_TO_ONE,
+        ["portDir"] = P_UP_LEFT
+    }
+}
 
 local indicatorRadius = 10
 local indicatorX = 220
@@ -396,12 +578,81 @@ local function updateIndicatorPos()
     end
 end
 
+local function getPlayerStatusBarImage(playerName)
+    local mainColor = gfx.kColorBlack
+    local subColor = gfx.kColorWhite
+    local playerStatusBarImage = gfx.image.new(123, 18)
+    gfx.pushContext(playerStatusBarImage)
+    local leftSideBuffer = 0
+    -- player box
+    gfx.setColor(subColor)
+    gfx.fillRoundRect(
+        0, 0, 123, 18, 4
+    )
+    -- player name
+    gfx.setFont(numFont)
+    gfx.drawTextAligned(playerName, 5, 5, gfx.kAlignLeft)
+    leftSideBuffer += 32
+    -- num special cards
+    gfx.setColor(mainColor)
+    gfx.fillRoundRect(leftSideBuffer + 12, 3, 8, 11, 1)
+    gfx.setLineWidth(1)
+    gfx.setColor(subColor)
+    gfx.drawRect(leftSideBuffer + 13, 4, 6, 9)
+    gfx.drawTextAligned("0", leftSideBuffer + 24, 5, gfx.kAlignLeft)
+    leftSideBuffer += 46
+    -- num resources
+    gfx.setColor(mainColor)
+    gfx.setLineWidth(1)
+    gfx.drawRect(leftSideBuffer - 1, 3, 6, 6)
+    gfx.drawRect(leftSideBuffer + 2, 8, 6, 6)
+    gfx.drawRect(leftSideBuffer - 3, 8, 6, 6)
+    gfx.drawTextAligned("0", leftSideBuffer + 12, 5, gfx.kAlignLeft)
+    leftSideBuffer += 6
+    -- vps
+    local vpCount = "0"
+    local vpCountWidth = gfx.getTextSize(vpCount)
+    gfx.fillCircleAtPoint(leftSideBuffer + 27, 9, 7)
+    gfx.setImageDrawMode(gfx.kDrawModeFillWhite) --  set this to draw white on black text
+    gfx.drawTextAligned("0", leftSideBuffer + 27 - vpCountWidth / 2, 5, gfx.kAlignCenter)
+
+    gfx.setImageDrawMode(gfx.kDrawModeCopy) -- this the default fyi
+    gfx.popContext()
+    return playerStatusBarImage
+end
+
+local function drawUI()
+    local playerName = "SAM"
+    local playerBarImage = getPlayerStatusBarImage(playerName)
+    playerBarImage:drawAnchored(5, 5, 0.0, 0.0)
+    playerName = "STVN"
+    playerBarImage = getPlayerStatusBarImage(playerName)
+    playerBarImage:drawAnchored(5, 25, 0.0, 0.0)
+    playerName = "JOE"
+    playerBarImage = getPlayerStatusBarImage(playerName)
+    playerBarImage:drawAnchored(5, 45, 0.0, 0.0)
+    playerName = "KAI"
+    playerBarImage = getPlayerStatusBarImage(playerName)
+    playerBarImage:drawAnchored(5, 65, 0.0, 0.0)
+    -- TODO: animate movement of this bar as turn transitions
+    -- (+20 to y per player)
+    gfx.setColor(gfx.kColorXOR)
+    gfx.fillRoundRect(5, 5, 123, 18, 4)
+end
+
 
 -- playdate.update function is required in every project!
 function playdate.update()
     -- Clear screen
     gfx.clear()
 
+    -- draw ports
+    for key, port in pairs(ports) do
+        local newPort = getPortImage(port["portType"], port["portDir"])
+        newPort:drawAnchored(originX + port["offsetFromOrigin"][1], originY + port["offsetFromOrigin"][2], 0.0, 0.0)
+    end
+
+    -- draw hexes and numbers
     local hexagonSide = hexHeight / 2
     local hexWidth = math.sqrt(3) * hexagonSide
     local vertCornerOffset = (hexHeight - hexagonSide) / 2
@@ -424,6 +675,10 @@ function playdate.update()
             newHex:drawAnchored(x, y, 0.0, 0.0)
         end
     end
+
+    -- draw ui
+    drawUI()
+
 
     -- regenerate tiles
     if pd.buttonJustPressed(pd.kButtonA) then
