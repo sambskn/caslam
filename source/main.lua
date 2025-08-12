@@ -280,25 +280,6 @@ local ports = {
     }
 }
 
-local indicatorRadius = 10
-local indicatorX = 220
-local indicatorY = 100
-
--- TODO: make indicator snap to *all* hex vertices
-local function drawIndicator()
-    local bumpRad = (math.sin(pd.getCurrentTimeMilliseconds() * 0.005) + 1) * 0.5 * (indicatorRadius / 4);
-    gfx.setColor(gfx.kColorWhite)
-    gfx.setLineWidth(7)
-    gfx.drawCircleAtPoint(indicatorX, indicatorY, indicatorRadius + bumpRad)
-    gfx.setLineWidth(6)
-    gfx.drawCircleAtPoint(indicatorX, indicatorY, bumpRad)
-
-    gfx.setColor(gfx.kColorBlack)
-    gfx.setLineWidth(2)
-    gfx.drawCircleAtPoint(indicatorX, indicatorY, indicatorRadius + bumpRad)
-    gfx.fillCircleAtPoint(indicatorX, indicatorY, bumpRad)
-end
-
 local function newHexPos(r, c)
     return {
         ["row"] = r,
@@ -528,6 +509,8 @@ end
 
 local currentHexes = generateHexes()
 
+local indicatorX = 220
+local indicatorY = 100
 local targetIndicatorX = indicatorX
 local targetIndicatorY = indicatorY
 local slowdownRadius = 10
@@ -536,39 +519,81 @@ local indicatorSpeed = 2
 local velX = 0
 local velY = 0
 
-local row = 1
-local col = 2
+local indicatorRow = 5
+local indicatorCol = 3
+-- local indicatorSpotType = "hex_vertices"
+local indicatorRadius = 10
+local indicatorRowMax = 12
+local indicatorColMax = 5
+
+local hexVerticeCounts = {
+    3, 4, 4, 5, 5, 6, 6, 5, 5, 4, 4, 3
+}
+-- TODO: make indicator snap to *all* hex vertices
+local function drawIndicator()
+    local bumpRad = (math.sin(pd.getCurrentTimeMilliseconds() * 0.005) + 1) * 0.5 * (indicatorRadius / 4);
+    gfx.setColor(gfx.kColorWhite)
+    gfx.setLineWidth(7)
+    gfx.drawCircleAtPoint(indicatorX, indicatorY, indicatorRadius + bumpRad)
+    gfx.setLineWidth(6)
+    gfx.drawCircleAtPoint(indicatorX, indicatorY, bumpRad)
+
+    gfx.setColor(gfx.kColorBlack)
+    gfx.setLineWidth(2)
+    gfx.drawCircleAtPoint(indicatorX, indicatorY, indicatorRadius + bumpRad)
+    gfx.fillCircleAtPoint(indicatorX, indicatorY, bumpRad)
+end
+
+local verticeRowOffsetAmount = {
+    0, 1, 1, 2, 2, 3, 3, 2, 2, 1, 1, 0
+}
 
 local function getXYFromRowCol()
+    print("ir ", indicatorRow)
+    print("ic ", indicatorCol)
     local hexagonSide = hexHeight / 2
     local hexWidth = math.sqrt(3) * hexagonSide
     local vertCornerOffset = (hexHeight - hexagonSide) / 2
-    local x = originX + (hexWidth * col) - (hexWidth / 2)
-    if row % 2 == 0 then
-        x -= hexWidth / 2
+    local x = originX + (hexWidth * indicatorCol) - (verticeRowOffsetAmount[indicatorRow] * hexWidth / 2)
+    local y = originY + hexagonSide + vertCornerOffset
+    if indicatorRow > 1 then
+        local counter = 1
+        while counter < indicatorRow do
+            if counter % 2 == 0 then
+                y += hexagonSide
+            else
+                y += vertCornerOffset
+            end
+            counter += 1
+        end
     end
-    if #currentHexes[row] > 4 then
-        x -= hexWidth
-    end
-    local y = originY + vertCornerOffset + row * (hexHeight - vertCornerOffset)
     return { x, y }
 end
 
 local function updateIndicatorPos()
-    if pd.buttonJustReleased(pd.kButtonUp) and row > 1 then
-        row -= 1
+    local rowChanged = false
+    if pd.buttonJustReleased(pd.kButtonUp) and indicatorRow > 1 then
+        indicatorRow -= 1
+        rowChanged = true
     end
 
-    if pd.buttonJustReleased(pd.kButtonDown) and row < #currentHexes then
-        row += 1
+    if pd.buttonJustReleased(pd.kButtonDown) and indicatorRow < indicatorRowMax then
+        indicatorRow += 1
+        rowChanged = true
+    end
+    if rowChanged then
+        --update max for cols based on current row
+        indicatorColMax = hexVerticeCounts[indicatorRow]
+        if indicatorCol > indicatorColMax then
+            indicatorCol = indicatorColMax
+        end
+    end
+    if pd.buttonJustReleased(pd.kButtonLeft) and indicatorCol > 1 then
+        indicatorCol -= 1
     end
 
-    if pd.buttonJustReleased(pd.kButtonLeft) and col > 1 then
-        col -= 1
-    end
-
-    if pd.buttonJustReleased(pd.kButtonRight) and col < #currentHexes[row] then
-        col += 1
+    if pd.buttonJustReleased(pd.kButtonRight) and indicatorCol < indicatorColMax then
+        indicatorCol += 1
     end
     local targetCoords = getXYFromRowCol()
     if targetIndicatorX ~= targetCoords[1] then
@@ -641,9 +666,9 @@ local function getPlayerStatusBarImage(playerName)
 end
 
 local player1BarImage = getPlayerStatusBarImage("SAM")
-local player2BarImage = getPlayerStatusBarImage("SAM")
-local player3BarImage = getPlayerStatusBarImage("SAM")
-local player4BarImage = getPlayerStatusBarImage("SAM")
+local player2BarImage = getPlayerStatusBarImage("JOE")
+local player3BarImage = getPlayerStatusBarImage("STVN")
+local player4BarImage = getPlayerStatusBarImage("KAI")
 
 local function drawUI()
     player1BarImage:drawAnchored(5, 5, 0.0, 0.0)
