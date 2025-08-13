@@ -529,7 +529,6 @@ local indicatorColMax = 5
 local hexVerticeCounts = {
     3, 4, 4, 5, 5, 6, 6, 5, 5, 4, 4, 3
 }
--- TODO: make indicator snap to *all* hex vertices
 local function drawIndicator()
     local bumpRad = (math.sin(pd.getCurrentTimeMilliseconds() * 0.005) + 1) * 0.5 * (indicatorRadius / 4);
     gfx.setColor(gfx.kColorWhite)
@@ -549,8 +548,6 @@ local verticeRowOffsetAmount = {
 }
 
 local function getXYFromRowCol()
-    print("ir ", indicatorRow)
-    print("ic ", indicatorCol)
     local hexagonSide = hexHeight / 2
     local hexWidth = math.sqrt(3) * hexagonSide
     local vertCornerOffset = (hexHeight - hexagonSide) / 2
@@ -621,6 +618,118 @@ local function updateIndicatorPos()
         indicatorY += velY
     end
 end
+
+local p1Color = 1
+local p2Color = 2
+local p3Color = 3
+local p4Color = 4
+
+local NO_FILL = 1
+local TWO_BY_ONE_FILL = 2
+local BLACK_FILL = 3
+local OTHER_FILL = 4
+
+local function drawSettlementImage(settlementWidth, settlementHeight, fillType)
+    local output = gfx.image.new(settlementWidth, settlementHeight)
+    gfx.pushContext(output)
+    if fillType == NO_FILL then
+        gfx.setColor(gfx.kColorWhite)
+    elseif fillType == BLACK_FILL then
+        gfx.setColor(gfx.kColorBlack)
+    elseif fillType == TWO_BY_ONE_FILL then
+        gfx.setPattern({ 0x87, 0x78, 0x78, 0x78, 0x78, 0x87, 0x87, 0x87 })
+    elseif fillType == OTHER_FILL then
+        gfx.setPattern({ 0x3c, 0x1e, 0x0f, 0x87, 0xc3, 0xe1, 0xf0, 0x78 })
+    end
+
+    gfx.fillPolygon(
+        0, 12 / 30 * settlementHeight,
+        0, 24 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
+        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
+        0, 12 / 30 * settlementHeight
+    )
+    if fillType == NO_FILL then
+        gfx.setColor(gfx.kColorWhite)
+    elseif fillType == BLACK_FILL then
+        gfx.setColor(gfx.kColorBlack)
+    elseif fillType == TWO_BY_ONE_FILL then
+        gfx.setPattern({ 0x87, 0x78, 0x78, 0x78, 0x78, 0x87, 0x87, 0x87 }) -- other direction from above
+    elseif fillType == OTHER_FILL then
+        gfx.setPattern({ 0x3c, 0x78, 0xf0, 0xe1, 0xc3, 0x87, 0x0f, 0x1f }) -- other direction from above
+    end
+
+    gfx.fillPolygon(
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
+        settlementWidth - 1, 19 / 30 * settlementHeight,
+        settlementWidth - 1, 8 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
+    )
+    gfx.fillPolygon(
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
+        settlementWidth - 1, 8 / 30 * settlementHeight,
+        26 / 32 * settlementWidth, 0,
+        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
+    )
+    gfx.setColor(gfx.kColorWhite)
+
+    gfx.setLineWidth(3)
+
+    gfx.drawPolygon(
+        0, 12 / 30 * settlementHeight,
+        0, 24 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
+        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
+        0, 12 / 30 * settlementHeight
+    )
+    gfx.drawPolygon(
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
+        settlementWidth - 1, 19 / 30 * settlementHeight,
+        settlementWidth - 1, 8 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
+    )
+    gfx.drawPolygon(
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
+        settlementWidth - 1, 8 / 30 * settlementHeight,
+        26 / 32 * settlementWidth, 0,
+        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
+    )
+    gfx.setColor(gfx.kColorBlack)
+    gfx.setLineWidth(2)
+    gfx.drawPolygon(
+        1, 12 / 30 * settlementHeight,
+        1, 24 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
+        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
+        1, 12 / 30 * settlementHeight
+    )
+    gfx.drawPolygon(
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
+        settlementWidth - 1, 19 / 30 * settlementHeight,
+        settlementWidth - 1, 8 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
+    )
+    gfx.drawPolygon(
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
+        settlementWidth - 1, 8 / 30 * settlementHeight,
+        26 / 32 * settlementWidth, 0,
+        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
+        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
+    )
+    gfx.popContext()
+    return output
+end
+
+local allColors = { NO_FILL, TWO_BY_ONE_FILL, BLACK_FILL, OTHER_FILL }
+local villages = {}
 
 local function getPlayerStatusBarImage(playerName)
     local mainColor = gfx.kColorBlack
@@ -715,13 +824,28 @@ function playdate.update()
         end
     end
 
+    for villageIdx, village in pairs(villages) do
+        village["image"]:drawAnchored(village["x"], village["y"], 0.5, 0.5)
+    end
+
     -- draw ui
     drawUI()
 
 
     -- regenerate tiles
-    if pd.buttonJustPressed(pd.kButtonA) then
+    if pd.buttonJustPressed(pd.kButtonB) then
         currentHexes = generateHexes()
+    end
+
+    -- place random village
+    if pd.buttonJustPressed(pd.kButtonA) then
+        local xy = getXYFromRowCol()
+        local randColor = allColors[math.random(#allColors)]
+        villages[#villages + 1] = {
+            ["x"] = xy[1],
+            ["y"] = xy[2],
+            ["image"] = drawSettlementImage(20, 18, randColor)
+        }
     end
 
     drawIndicator()
