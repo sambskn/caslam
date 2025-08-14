@@ -641,88 +641,36 @@ local function drawSettlementImage(settlementWidth, settlementHeight, fillType)
     elseif fillType == OTHER_FILL then
         gfx.setPattern({ 0x3c, 0x1e, 0x0f, 0x87, 0xc3, 0xe1, 0xf0, 0x78 })
     end
-
+    local offset = 2
     gfx.fillPolygon(
-        0, 12 / 30 * settlementHeight,
-        0, 24 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
-        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
-        0, 12 / 30 * settlementHeight
-    )
-    if fillType == NO_FILL then
-        gfx.setColor(gfx.kColorWhite)
-    elseif fillType == BLACK_FILL then
-        gfx.setColor(gfx.kColorBlack)
-    elseif fillType == TWO_BY_ONE_FILL then
-        gfx.setPattern({ 0x87, 0x78, 0x78, 0x78, 0x78, 0x87, 0x87, 0x87 }) -- other direction from above
-    elseif fillType == OTHER_FILL then
-        gfx.setPattern({ 0x3c, 0x78, 0xf0, 0xe1, 0xc3, 0x87, 0x0f, 0x1f }) -- other direction from above
-    end
-
-    gfx.fillPolygon(
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
-        settlementWidth - 1, 19 / 30 * settlementHeight,
-        settlementWidth - 1, 8 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
-    )
-    gfx.fillPolygon(
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
-        settlementWidth - 1, 8 / 30 * settlementHeight,
-        26 / 32 * settlementWidth, 0,
-        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
+        offset, offset,
+        settlementWidth - offset, offset,
+        settlementWidth - offset, settlementHeight - offset,
+        offset, settlementHeight - offset,
+        offset, offset
     )
     gfx.setColor(gfx.kColorWhite)
 
-    gfx.setLineWidth(3)
+    gfx.setLineWidth(5)
+    offset = -1
 
     gfx.drawPolygon(
-        0, 12 / 30 * settlementHeight,
-        0, 24 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
-        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
-        0, 12 / 30 * settlementHeight
+        offset, offset,
+        settlementWidth - offset, offset,
+        settlementWidth - offset, settlementHeight - offset,
+        offset, settlementHeight - offset,
+        offset, offset
     )
-    gfx.drawPolygon(
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
-        settlementWidth - 1, 19 / 30 * settlementHeight,
-        settlementWidth - 1, 8 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
-    )
-    gfx.drawPolygon(
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
-        settlementWidth - 1, 8 / 30 * settlementHeight,
-        26 / 32 * settlementWidth, 0,
-        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
-    )
+
     gfx.setColor(gfx.kColorBlack)
     gfx.setLineWidth(2)
+    offset = 2
     gfx.drawPolygon(
-        1, 12 / 30 * settlementHeight,
-        1, 24 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
-        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
-        1, 12 / 30 * settlementHeight
-    )
-    gfx.drawPolygon(
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 29 / 30 * settlementHeight,
-        settlementWidth - 1, 19 / 30 * settlementHeight,
-        settlementWidth - 1, 8 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
-    )
-    gfx.drawPolygon(
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight,
-        settlementWidth - 1, 8 / 30 * settlementHeight,
-        26 / 32 * settlementWidth, 0,
-        6 / 32 * settlementWidth, 10 / 30 * settlementHeight,
-        10 / 32 * settlementWidth, 18 / 30 * settlementHeight
+        offset, offset,
+        settlementWidth - offset, offset,
+        settlementWidth - offset, settlementHeight - offset,
+        offset, settlementHeight - offset,
+        offset, offset
     )
     gfx.popContext()
     return output
@@ -844,7 +792,7 @@ function playdate.update()
         villages[#villages + 1] = {
             ["x"] = xy[1],
             ["y"] = xy[2],
-            ["image"] = drawSettlementImage(20, 18, randColor)
+            ["image"] = drawSettlementImage(14, 14, randColor)
         }
     end
 
