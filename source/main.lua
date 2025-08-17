@@ -450,7 +450,7 @@ local function generateHexes()
                 hexes[rowIndex][col]["image"] = getHexImage(hexHeight, NOMANS)
             end
             -- decremnt value in pool
-            hexTypePool[randHexType] -= 1
+            hexTypePool[randHexType] = hexTypePool[randHexType] - 1
         end
     end
     -- can start in any of the corners
@@ -488,7 +488,7 @@ local function generateHexes()
         if hexes[currentPos["row"]][currentPos["col"]]["type"] ~= NOMANS then
             local numIndex = numberOfNumAssigned + 1
             hexes[currentPos["row"]][currentPos["col"]]["number"] = numberSet[numIndex]
-            numberOfNumAssigned += 1
+            numberOfNumAssigned = numberOfNumAssigned + 1
         end
         -- save image of hex
         hexes[currentPos["row"]][currentPos["col"]]["image"] = getHexImage(
@@ -557,11 +557,11 @@ local function getXYFromRowCol()
         local counter = 1
         while counter < indicatorRow do
             if counter % 2 == 0 then
-                y += hexagonSide
+                y = y + hexagonSide
             else
-                y += vertCornerOffset
+                y = y + vertCornerOffset
             end
-            counter += 1
+            counter = counter + 1
         end
     end
     return { x, y }
@@ -570,12 +570,12 @@ end
 local function updateIndicatorPos()
     local rowChanged = false
     if pd.buttonJustReleased(pd.kButtonUp) and indicatorRow > 1 then
-        indicatorRow -= 1
+        indicatorRow = indicatorRow - 1
         rowChanged = true
     end
 
     if pd.buttonJustReleased(pd.kButtonDown) and indicatorRow < indicatorRowMax then
-        indicatorRow += 1
+        indicatorRow = indicatorRow + 1
         rowChanged = true
     end
     if rowChanged then
@@ -586,11 +586,11 @@ local function updateIndicatorPos()
         end
     end
     if pd.buttonJustReleased(pd.kButtonLeft) and indicatorCol > 1 then
-        indicatorCol -= 1
+        indicatorCol = indicatorCol - 1
     end
 
     if pd.buttonJustReleased(pd.kButtonRight) and indicatorCol < indicatorColMax then
-        indicatorCol += 1
+        indicatorCol = indicatorCol + 1
     end
     local targetCoords = getXYFromRowCol()
     if targetIndicatorX ~= targetCoords[1] then
@@ -604,18 +604,18 @@ local function updateIndicatorPos()
     local diffY = targetIndicatorY - indicatorY
     local diffTotal = math.sqrt(diffX * diffX + diffY * diffY)
     -- update velocity
-    velX += (diffX / diffTotal) * indicatorSpeed
-    velY += (diffY / diffTotal) * indicatorSpeed
+    velX = velX + (diffX / diffTotal) * indicatorSpeed
+    velY = velY + (diffY / diffTotal) * indicatorSpeed
     if diffTotal < slowdownRadius then
         local slowdown = math.max(diffTotal / slowdownRadius, 0.5)
-        velX *= slowdown
-        velY *= slowdown
+        velX = velX * slowdown
+        velY = velY * slowdown
     end
     if math.abs(diffX) > 1 then
-        indicatorX += velX
+        indicatorX = indicatorX + velX
     end
     if math.abs(diffY) > 1 then
-        indicatorY += velY
+        indicatorY =indicatorY + velY
     end
 end
 
@@ -676,6 +676,58 @@ local function drawSettlementImage(settlementWidth, settlementHeight, fillType)
     return output
 end
 
+local ROAD_DIR_VERT = 1
+local ROAD_DIR_UPRIGHT = 2
+local ROAD_DIR_UPLEFT = 3
+local ROAD_DIR_HORIZ = 4
+local roadWidth = 6
+local roadLength = 16
+local function getRoadImage(direction, fillType)
+    local output = gfx.image.new(roadLength, roadLength)
+    if fillType == NO_FILL then
+        gfx.setColor(gfx.kColorWhite)
+    elseif fillType == BLACK_FILL then
+        gfx.setColor(gfx.kColorBlack)
+    elseif fillType == TWO_BY_ONE_FILL then
+        gfx.setPattern({ 0x87, 0x78, 0x78, 0x78, 0x78, 0x87, 0x87, 0x87 })
+    elseif fillType == OTHER_FILL then
+        gfx.setPattern({ 0x3c, 0x1e, 0x0f, 0x87, 0xc3, 0xe1, 0xf0, 0x78 })
+    end
+    gfx.pushContext(output)
+    if direction == ROAD_DIR_VERT then
+
+        gfx.fillPolygon(
+            roadLength / 2 - roadWidth / 2, 0,
+            roadLength / 2 + roadWidth / 2, 0,
+            roadLength / 2 + roadWidth / 2, roadLength,
+            roadLength / 2 - roadWidth / 2, roadLength,
+            roadLength / 2 - roadWidth / 2, 0
+        )
+        gfx.setColor(gfx.kColorWhite)
+        gfx.setLineWidth(4)
+        gfx.drawPolygon(
+            roadLength / 2 - roadWidth / 2 + 2, 2,
+            roadLength / 2 + roadWidth / 2 -2, 2,
+            roadLength / 2 + roadWidth / 2 - 2, roadLength -2,
+            roadLength / 2 - roadWidth / 2 + 2, roadLength -2,
+            roadLength / 2 - roadWidth / 2 + 2, 2 
+        )
+        gfx.setColor(gfx.kColorBlack)
+        gfx.setLineWidth(2)
+        gfx.drawPolygon(
+            roadLength / 2 - roadWidth / 2, 0,
+            roadLength / 2 + roadWidth / 2, 0,
+            roadLength / 2 + roadWidth / 2, roadLength,
+            roadLength / 2 - roadWidth / 2, roadLength,
+            roadLength / 2 - roadWidth / 2, 0
+        )
+    elseif direction == ROAD_DIR_UPRIGHT then
+
+    end
+    gfx.popContext()
+    return output
+end
+
 local allColors = { NO_FILL, TWO_BY_ONE_FILL, BLACK_FILL, OTHER_FILL }
 local villages = {}
 
@@ -693,7 +745,7 @@ local function getPlayerStatusBarImage(playerName)
     -- player name
     gfx.setFont(numFont)
     gfx.drawTextAligned(playerName, 5, 5, gfx.kAlignLeft)
-    leftSideBuffer += 32
+    leftSideBuffer = leftSideBuffer + 32
     -- num special cards
     gfx.setColor(mainColor)
     gfx.fillRoundRect(leftSideBuffer + 12, 3, 8, 11, 1)
@@ -701,7 +753,7 @@ local function getPlayerStatusBarImage(playerName)
     gfx.setColor(subColor)
     gfx.drawRect(leftSideBuffer + 13, 4, 6, 9)
     gfx.drawTextAligned("0", leftSideBuffer + 24, 5, gfx.kAlignLeft)
-    leftSideBuffer += 46
+    leftSideBuffer = leftSideBuffer + 46
     -- num resources
     gfx.setColor(mainColor)
     gfx.setLineWidth(1)
@@ -709,7 +761,7 @@ local function getPlayerStatusBarImage(playerName)
     gfx.drawRect(leftSideBuffer + 2, 8, 6, 6)
     gfx.drawRect(leftSideBuffer - 3, 8, 6, 6)
     gfx.drawTextAligned("0", leftSideBuffer + 12, 5, gfx.kAlignLeft)
-    leftSideBuffer += 6
+    leftSideBuffer = leftSideBuffer + 6
     -- vps
     local vpCount = "0"
     local vpCountWidth = gfx.getTextSize(vpCount)
@@ -738,6 +790,7 @@ local function drawUI()
     gfx.fillRoundRect(5, 5, 123, 18, 4)
 end
 
+local roadImage = getRoadImage(ROAD_DIR_VERT, NO_FILL)
 
 -- playdate.update function is required in every project!
 function playdate.update()
@@ -762,10 +815,10 @@ function playdate.update()
             local newHex = hex["image"]
             local x = originX + (hexWidth * col) - (hexWidth / 2)
             if row % 2 == 0 then
-                x -= hexWidth / 2
+                x = x - hexWidth / 2
             end
             if #hexesTable > 4 then
-                x -= hexWidth
+                x = x - hexWidth
             end
             local y = originY + row * (hexHeight - vertCornerOffset)
             newHex:drawAnchored(x, y, 0.0, 0.0)
@@ -795,6 +848,8 @@ function playdate.update()
             ["image"] = drawSettlementImage(14, 14, randColor)
         }
     end
+
+    roadImage:drawAnchored(100, 100, 0.0, 0.0)
 
     drawIndicator()
     updateIndicatorPos()
