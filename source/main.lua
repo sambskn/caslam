@@ -1,10 +1,4 @@
--- Below is a small example program where you can move a circle
--- around with the crank. You can delete everything in this file,
--- but make sure to add back in a playdate.update function since
--- one is required for every Playdate game!
--- =============================================================
-
--- Importing libraries used for drawCircleAtPoint and crankIndicator
+-- use of playdate core libraries
 import "CoreLibs/graphics"
 import "CoreLibs/ui"
 
@@ -12,11 +6,14 @@ import "CoreLibs/ui"
 local pd <const> = playdate
 local gfx <const> = playdate.graphics
 
+-- const for total height in pixels of each onscreen hex tile
 local hexHeight = 54
+-- origin point onscreen for the top left of the board
 local originX, originY = 168, -28
 
 local numFont = gfx.font.new("fonts/topaz_serif_8")
 
+-- types of resources
 local TREES = 1
 local CROPS = 2
 local ANIMALS = 3
@@ -24,15 +21,16 @@ local ORE = 4
 local CLAY = 5
 local NOMANS = 6
 
+-- create sprite for hex tile, including number (unless its a NOMANS)
 local function getHexImage(height, hexType, hexNum)
     -- height of hexagon = long diameter of hexagon = 2x one side
     local hexagonSide = height / 2
     local hexWidth = math.sqrt(3) * hexagonSide
-    local vertCornerOffset = (height - hexagonSide) / 2
+    local vertCornerOffset = (height - hexagonSide) / 2 -- diff in y dir from top/bottom corners of hex to outer corners
     local hexImg = gfx.image.new(hexWidth + 2, height)
 
     gfx.pushContext(hexImg)
-    -- shoutout https://gurgleapps.com/tools/matrix
+    -- shoutout https://gurgleapps.com/tools/matrix, usefult ool for making 8x8 matrix byte arrays
     if hexType == TREES then
         gfx.setPattern({ 0x55, 0x55, 0x57, 0x75, 0x75, 0xad, 0xad, 0x77 }) -- funk blobs
     end
@@ -55,7 +53,7 @@ local function getHexImage(height, hexType, hexNum)
         --triangles?
         gfx.setPattern({ 0x01, 0x82, 0xc5, 0xea, 0xf5, 0xfa, 0xfd, 0xfe })
     end
-
+    -- fill pattern
     gfx.fillPolygon(
         0, vertCornerOffset,
         hexWidth / 2, 0,
@@ -65,6 +63,7 @@ local function getHexImage(height, hexType, hexNum)
         0, vertCornerOffset + hexagonSide,
         0, vertCornerOffset
     )
+    -- clear border lines
     gfx.setColor(gfx.kColorClear)
     gfx.setLineWidth(2)
     gfx.drawPolygon(
@@ -521,7 +520,11 @@ local velY = 0
 
 local indicatorRow = 5
 local indicatorCol = 3
--- local indicatorSpotType = "hex_vertices"
+-- TODO: implement switching between the indicatior modes
+-- (settlements get placed at hex vertices, roads get palces at hex edgesw
+--  so we need to support 'selection' with those two modes, as well as the 'hidden' mode
+-- when the player isn't actively selecting)
+-- local indicatorSpotType = "hex_vertices" | "hex_edges" | "insicator_hidden"
 local indicatorRadius = 10
 local indicatorRowMax = 12
 local indicatorColMax = 5
@@ -615,7 +618,7 @@ local function updateIndicatorPos()
         indicatorX = indicatorX + velX
     end
     if math.abs(diffY) > 1 then
-        indicatorY =indicatorY + velY
+        indicatorY = indicatorY + velY
     end
 end
 
@@ -695,7 +698,6 @@ local function getRoadImage(direction, fillType)
     end
     gfx.pushContext(output)
     if direction == ROAD_DIR_VERT then
-
         gfx.fillPolygon(
             roadLength / 2 - roadWidth / 2, 0,
             roadLength / 2 + roadWidth / 2, 0,
@@ -707,10 +709,10 @@ local function getRoadImage(direction, fillType)
         gfx.setLineWidth(4)
         gfx.drawPolygon(
             roadLength / 2 - roadWidth / 2 + 2, 2,
-            roadLength / 2 + roadWidth / 2 -2, 2,
-            roadLength / 2 + roadWidth / 2 - 2, roadLength -2,
-            roadLength / 2 - roadWidth / 2 + 2, roadLength -2,
-            roadLength / 2 - roadWidth / 2 + 2, 2 
+            roadLength / 2 + roadWidth / 2 - 2, 2,
+            roadLength / 2 + roadWidth / 2 - 2, roadLength - 2,
+            roadLength / 2 - roadWidth / 2 + 2, roadLength - 2,
+            roadLength / 2 - roadWidth / 2 + 2, 2
         )
         gfx.setColor(gfx.kColorBlack)
         gfx.setLineWidth(2)
@@ -849,7 +851,7 @@ function playdate.update()
         }
     end
 
-    roadImage:drawAnchored(100, 100, 0.0, 0.0)
+    roadImage:drawAnchored(120, 120, 0.0, 0.0)
 
     drawIndicator()
     updateIndicatorPos()
